@@ -89,6 +89,20 @@ def test_restore_rejects_mismatched_case_id() -> None:
     assert response.status_code == 400
 
 
+def test_follow_up_rejects_mismatched_case_id_and_invalid_field_values() -> None:
+    with TestClient(app) as client:
+        mismatched = client.get("/cases/PV-2026-0451").json()
+        mismatched["case_id"] = "OTHER"
+        mismatch_response = client.post("/cases/PV-2026-0451/follow-ups", json=mismatched)
+
+        invalid_confidence = client.get("/cases/PV-2026-0451").json()
+        invalid_confidence["sections"]["patient"]["age"]["confidence"] = 1.5
+        invalid_response = client.post("/cases/PV-2026-0451/follow-ups", json=invalid_confidence)
+
+    assert mismatch_response.status_code == 400
+    assert invalid_response.status_code == 400
+
+
 def test_unknown_case_returns_404() -> None:
     with TestClient(app) as client:
         response = client.get("/cases/UNKNOWN")

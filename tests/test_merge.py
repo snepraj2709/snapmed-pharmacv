@@ -44,6 +44,19 @@ def test_merge_marks_new_fields_new(base_case: CaseRecord) -> None:
     assert field.value == "170"
 
 
+def test_merge_marks_fields_in_new_sections_new(base_case: CaseRecord) -> None:
+    follow_up = base_case.model_copy(deep=True)
+    follow_up.sections["lab_results"] = {
+        "ck": ExtractedField(value="310 U/L", confidence=0.76, source="p.6 s1")
+    }
+
+    merged = merge_cases(base_case, follow_up)
+
+    field = merged.sections["lab_results"]["ck"]
+    assert field.status == "new"
+    assert field.value == "310 U/L"
+
+
 def test_merge_preserves_absent_stored_fields(base_case: CaseRecord) -> None:
     follow_up = base_case.model_copy(deep=True)
     del follow_up.sections["patient"]["weight_kg"]
@@ -52,6 +65,18 @@ def test_merge_preserves_absent_stored_fields(base_case: CaseRecord) -> None:
 
     field = merged.sections["patient"]["weight_kg"]
     assert field.value == "78"
+    assert field.status == "unchanged"
+    assert field.not_in_followup is True
+
+
+def test_merge_preserves_absent_stored_sections(base_case: CaseRecord) -> None:
+    follow_up = base_case.model_copy(deep=True)
+    del follow_up.sections["reporter"]
+
+    merged = merge_cases(base_case, follow_up)
+
+    field = merged.sections["reporter"]["country"]
+    assert field.value == "India"
     assert field.status == "unchanged"
     assert field.not_in_followup is True
 

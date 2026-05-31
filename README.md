@@ -27,6 +27,19 @@ Run tests:
 uv run pytest
 ```
 
+## Merge Behavior
+
+Follow-up payloads are merged field by field against the latest stored case:
+
+- Same `value`: mark the field as `status: "unchanged"` and keep the follow-up confidence/source.
+- Different `value`: mark the field as `status: "overridden"` and include `previous_value`.
+- New field: add it with `status: "new"`.
+- Stored field omitted from the follow-up: preserve the stored value, mark it as `status: "unchanged"`, and add `not_in_followup: true`.
+
+Omitted stored fields are preserved because an AI follow-up extraction can miss data that still belongs in the case. Dropping those fields would make the latest case less complete and could hide information a reviewer had already seen.
+
+The top-level `missing_fields` array from the latest follow-up is surfaced unchanged in the merged response.
+
 ## API Examples
 
 Health check:
