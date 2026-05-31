@@ -70,8 +70,8 @@ def test_cases_can_be_listed_and_restored_idempotently() -> None:
         case = list_response.json()["cases"][0]
         case["case_classification"] = "significant"
 
-        first_restore = client.put("/cases/PV-2026-0451", json=case)
-        second_restore = client.put("/cases/PV-2026-0451", json=case)
+        first_restore = client.post("/cases", json=case)
+        second_restore = client.post("/cases", json=case)
         latest = client.get("/cases/PV-2026-0451")
 
     assert list_response.status_code == 200

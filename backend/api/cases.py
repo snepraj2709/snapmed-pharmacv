@@ -13,6 +13,11 @@ def list_cases() -> CaseListResponse:
     return CaseListResponse(cases=storage.list_cases())
 
 
+@router.post("", response_model=CaseRecord, response_model_exclude_none=True)
+def restore_case_from_backup(payload: CaseRecord) -> CaseRecord:
+    return storage.put_case(payload)
+
+
 @router.get("/{case_id}", response_model=CaseRecord, response_model_exclude_none=True)
 def get_case(case_id: str) -> CaseRecord:
     case = storage.get_case(case_id)

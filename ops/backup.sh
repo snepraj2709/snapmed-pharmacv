@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 SERVICE_URL="${SERVICE_URL:-http://127.0.0.1:8000}"
-BACKUP_DIR="${BACKUP_DIR:-backups}"
+BACKUP_DIR="${BACKUP_DIR:-$ROOT_DIR/backups}"
 
 usage() {
   cat <<'USAGE'
@@ -31,13 +33,17 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   usage
   exit 0
 fi
+if (($# > 0)); then
+  usage >&2
+  exit 2
+fi
 
 require_command curl
 require_command jq
 
 mkdir -p "$BACKUP_DIR"
 timestamp="$(date -u '+%Y%m%dT%H%M%SZ')"
-backup_file="$BACKUP_DIR/cases-$timestamp.json"
+backup_file="$BACKUP_DIR/cases-$timestamp-$$.json"
 tmp_file="$(mktemp "$BACKUP_DIR/.cases.XXXXXX")"
 trap 'rm -f "$tmp_file"' EXIT
 

@@ -150,23 +150,23 @@ Create a timestamped backup under `backups/`:
 ./ops/backup.sh
 ```
 
-The script reads all latest cases from `GET /cases`, validates the response with `jq`, writes `backups/cases-<timestamp>.json`, logs progress to stderr with UTC timestamps, and prints the backup path to stdout.
+The script reads all latest cases from `GET /cases`, validates the response with `jq`, writes `backups/cases-<timestamp>-<pid>.json`, logs progress to stderr with UTC timestamps, and prints the backup path to stdout. By default it writes to this repository's `backups/` directory even when called from cron or another working directory.
 
 ### Restore Data
 
 Preview a restore without changing the service:
 
 ```bash
-./ops/restore.sh --dry-run backups/cases-<timestamp>.json
+./ops/restore.sh --dry-run backups/cases-<timestamp>-<pid>.json
 ```
 
 Restore cases:
 
 ```bash
-./ops/restore.sh backups/cases-<timestamp>.json
+./ops/restore.sh backups/cases-<timestamp>-<pid>.json
 ```
 
-Restore uses `PUT /cases/{caseId}`, so rerunning the same backup is idempotent.
+Restore posts each case to `POST /cases`, which upserts by `case_id`, so rerunning the same backup is idempotent.
 
 ### Debug Failed Startup
 
@@ -202,8 +202,8 @@ make build
 make start
 make test
 make backup
-make restore-dry-run BACKUP=backups/cases-<timestamp>.json
-make restore BACKUP=backups/cases-<timestamp>.json
+make restore-dry-run BACKUP=backups/cases-<timestamp>-<pid>.json
+make restore BACKUP=backups/cases-<timestamp>-<pid>.json
 make logs
 make stop
 make clean

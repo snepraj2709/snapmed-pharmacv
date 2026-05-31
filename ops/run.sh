@@ -3,6 +3,9 @@ set -Eeuo pipefail
 
 PROJECT_NAME="${COMPOSE_PROJECT_NAME:-snapmed-pharmacv}"
 COMPOSE=(docker compose -p "$PROJECT_NAME")
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+HOST_PORT="${HOST_PORT:-8000}"
 
 usage() {
   cat <<'USAGE'
@@ -33,7 +36,23 @@ require_uv() {
   command -v uv >/dev/null 2>&1 || die "uv is not installed"
 }
 
+require_no_port_conflict() {
+  if [[ -n "$("${COMPOSE[@]}" ps --status running -q api 2>/dev/null || true)" ]]; then
+    return
+  fi
+  command -v lsof >/dev/null 2>&1 || return
+  if lsof -nP -iTCP:"$HOST_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+    die "port $HOST_PORT is already in use; stop that process or set HOST_PORT"
+  fi
+}
+
 command_name="${1:-}"
+if (($# > 1)); then
+  usage >&2
+  exit 2
+fi
+
+cd "$ROOT_DIR"
 
 case "$command_name" in
   build)
@@ -42,6 +61,7 @@ case "$command_name" in
     ;;
   start)
     require_docker
+    require_no_port_conflict
     "${COMPOSE[@]}" up -d
     ;;
   stop)

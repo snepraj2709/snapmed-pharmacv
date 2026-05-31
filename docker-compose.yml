@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     image: snapmed-pharmacv-api:local
     ports:
-      - "8000:8000"
+      - "${HOST_PORT:-8000}:8000"
     healthcheck:
       test:
         [
