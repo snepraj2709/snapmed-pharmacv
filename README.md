@@ -96,3 +96,102 @@ List reviewer queries for a case:
 ```bash
 curl -s 'http://localhost:8000/queries?caseId=PV-2026-0451' | jq
 ```
+
+## Operations
+
+### Build And Start
+
+Build the container image:
+
+```bash
+./ops/run.sh build
+```
+
+Start the service:
+
+```bash
+./ops/run.sh start
+```
+
+The API listens on `http://localhost:8000`. The Compose service has a healthcheck that calls `/health` from inside the container.
+
+### Verify Health
+
+Check liveness:
+
+```bash
+curl -fsS http://localhost:8000/health
+```
+
+Check the bootstrap case:
+
+```bash
+curl -fsS http://localhost:8000/cases/PV-2026-0451 | jq '.case_id, .version'
+```
+
+### Back Up Data
+
+Create a timestamped backup under `backups/`:
+
+```bash
+./ops/backup.sh
+```
+
+The script reads all latest cases from `GET /cases`, validates the response with `jq`, writes `backups/cases-<timestamp>.json`, logs progress to stderr with UTC timestamps, and prints the backup path to stdout.
+
+### Restore Data
+
+Preview a restore without changing the service:
+
+```bash
+./ops/restore.sh --dry-run backups/cases-<timestamp>.json
+```
+
+Restore cases:
+
+```bash
+./ops/restore.sh backups/cases-<timestamp>.json
+```
+
+Restore uses `PUT /cases/{caseId}`, so rerunning the same backup is idempotent.
+
+### Debug Failed Startup
+
+Check whether Docker is reachable:
+
+```bash
+docker info
+```
+
+Check container status and health:
+
+```bash
+docker compose ps
+docker compose logs --tail=100 api
+```
+
+If port `8000` is already in use, stop the other process or change the published port in `docker-compose.yml`. If the app starts but fails immediately, confirm `case_v1.json` exists in the image context and that the image was rebuilt after code changes.
+
+### Debug Failed Requests
+
+Check these first:
+
+- `/health` returns `{"status":"ok"}`.
+- The requested case ID exists in `GET /cases`.
+- Follow-up payload `case_id` matches the path case ID.
+- Query `fieldPath` uses `<section>.<field>`, for example `adverse_event.onset_date`.
+- Container logs show the request and any validation error details.
+
+### Common Commands
+
+```bash
+make build
+make start
+make test
+make backup
+make restore-dry-run BACKUP=backups/cases-<timestamp>.json
+make restore BACKUP=backups/cases-<timestamp>.json
+make logs
+make stop
+make clean
+```
