@@ -64,6 +64,31 @@ def test_queries_can_be_created_and_listed() -> None:
     assert list_response.json() == [created]
 
 
+def test_cases_can_be_listed_and_restored_idempotently() -> None:
+    with TestClient(app) as client:
+        list_response = client.get("/cases")
+        case = list_response.json()["cases"][0]
+        case["case_classification"] = "significant"
+
+        first_restore = client.put("/cases/PV-2026-0451", json=case)
+        second_restore = client.put("/cases/PV-2026-0451", json=case)
+        latest = client.get("/cases/PV-2026-0451")
+
+    assert list_response.status_code == 200
+    assert list_response.json()["cases"][0]["case_id"] == "PV-2026-0451"
+    assert first_restore.status_code == 200
+    assert second_restore.status_code == 200
+    assert latest.json()["case_classification"] == "significant"
+
+
+def test_restore_rejects_mismatched_case_id() -> None:
+    with TestClient(app) as client:
+        case = client.get("/cases/PV-2026-0451").json()
+        response = client.put("/cases/OTHER", json=case)
+
+    assert response.status_code == 400
+
+
 def test_unknown_case_returns_404() -> None:
     with TestClient(app) as client:
         response = client.get("/cases/UNKNOWN")
