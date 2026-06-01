@@ -38,9 +38,8 @@ def create_follow_up(case_id: str, payload: CaseRecord) -> CaseRecord:
     if payload.case_id != case_id:
         raise HTTPException(status_code=400, detail="Path caseId must match payload case_id")
 
-    stored = storage.get_case(case_id)
-    if stored is None:
+    merged = storage.update_case(case_id, lambda stored: merge_cases(stored, payload))
+    if merged is None:
         raise HTTPException(status_code=404, detail=f"Case {case_id} not found")
 
-    merged = merge_cases(stored, payload)
-    return storage.put_case(merged)
+    return merged

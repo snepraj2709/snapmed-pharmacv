@@ -1,5 +1,5 @@
 from backend.models.cases import CaseRecord, ExtractedField
-from backend.services.merge import field_path_exists, merge_cases, parse_field_path
+from backend.services.merge import field_path_exists, merge_cases, normalize_field_path, parse_field_path
 
 
 def test_merge_marks_same_values_unchanged_with_latest_metadata(base_case: CaseRecord) -> None:
@@ -92,5 +92,6 @@ def test_merge_surfaces_missing_fields(base_case: CaseRecord) -> None:
 
 def test_field_path_helpers(base_case: CaseRecord) -> None:
     assert parse_field_path("patient.age") == ("patient", "age")
+    assert normalize_field_path(" patient . age ") == "patient.age"
     assert field_path_exists(base_case, "patient.age")
     assert not field_path_exists(base_case, "patient.unknown")

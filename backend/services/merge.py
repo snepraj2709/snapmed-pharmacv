@@ -52,10 +52,15 @@ def field_path_exists(case: CaseRecord, field_path: str) -> bool:
 
 
 def parse_field_path(field_path: str) -> tuple[str, str]:
-    parts = field_path.split(".")
+    parts = [part.strip() for part in field_path.strip().split(".")]
     if len(parts) != 2 or any(part.strip() == "" for part in parts):
         raise ValueError("fieldPath must use '<section>.<field>' format")
     return parts[0], parts[1]
+
+
+def normalize_field_path(field_path: str) -> str:
+    section_name, field_name = parse_field_path(field_path)
+    return f"{section_name}.{field_name}"
 
 
 def _annotated(

@@ -64,6 +64,40 @@ def test_queries_can_be_created_and_listed() -> None:
     assert list_response.json() == [created]
 
 
+def test_list_queries_rejects_blank_case_id_and_strips_valid_case_id() -> None:
+    with TestClient(app) as client:
+        blank_case_id = client.get("/queries", params={"caseId": "   "})
+        spaced_case_id = client.get("/queries", params={"caseId": " PV-2026-0451 "})
+
+    assert blank_case_id.status_code == 400
+    assert spaced_case_id.status_code == 200
+
+
+def test_query_rejects_blank_question_and_normalizes_field_path() -> None:
+    with TestClient(app) as client:
+        blank_question = client.post(
+            "/queries",
+            json={
+                "caseId": "PV-2026-0451",
+                "fieldPath": "adverse_event.onset_date",
+                "question": "   ",
+            },
+        )
+        spaced_field_path = client.post(
+            "/queries",
+            json={
+                "caseId": "PV-2026-0451",
+                "fieldPath": " adverse_event . onset_date ",
+                "question": " Please confirm the onset date. ",
+            },
+        )
+
+    assert blank_question.status_code == 400
+    assert spaced_field_path.status_code == 200
+    assert spaced_field_path.json()["fieldPath"] == "adverse_event.onset_date"
+    assert spaced_field_path.json()["question"] == "Please confirm the onset date."
+
+
 def test_cases_can_be_listed_and_restored_idempotently() -> None:
     with TestClient(app) as client:
         list_response = client.get("/cases")
@@ -79,6 +113,21 @@ def test_cases_can_be_listed_and_restored_idempotently() -> None:
     assert first_restore.status_code == 200
     assert second_restore.status_code == 200
     assert latest.json()["case_classification"] == "significant"
+
+
+def test_case_payload_rejects_blank_missing_fields() -> None:
+    with TestClient(app) as client:
+        valid_case = client.get("/cases/PV-2026-0451").json()
+        valid_case["missing_fields"] = [" reporter.phone "]
+        valid_response = client.post("/cases", json=valid_case)
+
+        invalid_case = client.get("/cases/PV-2026-0451").json()
+        invalid_case["missing_fields"] = ["   "]
+        invalid_response = client.post("/cases", json=invalid_case)
+
+    assert valid_response.status_code == 200
+    assert valid_response.json()["missing_fields"] == ["reporter.phone"]
+    assert invalid_response.status_code == 400
 
 
 def test_restore_rejects_mismatched_case_id() -> None:
@@ -133,3 +182,32 @@ def test_invalid_payload_and_unknown_field_path_return_400() -> None:
     assert invalid_payload.status_code == 400
     assert unknown_field.status_code == 400
     assert malformed_field_path.status_code == 400
+
+
+def test_local_frontend_cors_preflight_is_allowed() -> None:
+    with TestClient(app) as client:
+        response = client.options(
+            "/cases/PV-2026-0451",
+            headers={
+                "Origin": "http://localhost:5173",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert "GET" in response.headers["access-control-allow-methods"]
+
+
+def test_untrusted_cors_origin_is_not_allowed() -> None:
+    with TestClient(app) as client:
+        response = client.options(
+            "/cases/PV-2026-0451",
+            headers={
+                "Origin": "http://example.test",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+
+    assert response.status_code == 400
+    assert "access-control-allow-origin" not in response.headers
