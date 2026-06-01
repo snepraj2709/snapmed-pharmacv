@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -184,19 +185,36 @@ def test_invalid_payload_and_unknown_field_path_return_400() -> None:
     assert malformed_field_path.status_code == 400
 
 
-def test_local_frontend_cors_preflight_is_allowed() -> None:
+@pytest.mark.parametrize(
+    "origin",
+    [
+        "http://localhost:5173",
+        "http://127.0.0.1:3001",
+        "http://0.0.0.0:4173",
+        "http://[::1]:5173",
+    ],
+)
+def test_local_development_cors_preflight_is_allowed(origin: str) -> None:
     with TestClient(app) as client:
         response = client.options(
             "/cases/PV-2026-0451",
             headers={
-                "Origin": "http://localhost:5173",
+                "Origin": origin,
                 "Access-Control-Request-Method": "GET",
             },
         )
 
     assert response.status_code == 200
-    assert response.headers["access-control-allow-origin"] == "http://localhost:5173"
+    assert response.headers["access-control-allow-origin"] == origin
     assert "GET" in response.headers["access-control-allow-methods"]
+
+
+def test_local_development_cors_get_is_allowed() -> None:
+    with TestClient(app) as client:
+        response = client.get("/cases", headers={"Origin": "http://127.0.0.1:3001"})
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:3001"
 
 
 def test_untrusted_cors_origin_is_not_allowed() -> None:
