@@ -1,11 +1,7 @@
+import { CaseReviewPage } from "@/features/case-review/CaseReviewPage";
+
+const DEFAULT_CASE_ID = "PV-2026-0451";
+
 export function App() {
-  return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="container py-10">
-        <h1 className="text-2xl font-semibold tracking-normal text-brand-navy">
-          SnapMed PharmaCV
-        </h1>
-      </div>
-    </main>
-  );
+  return <CaseReviewPage caseId={DEFAULT_CASE_ID} />;
 }
