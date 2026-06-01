@@ -1,5 +1,6 @@
 import { env } from "@/config/env";
 import { buildFallbackMergedCase, normalizeFollowUpPayload } from "@/data/case-fixtures";
+import { normalizeCaseClassification } from "@/domain/case-classification";
 
 import { FetchHttpClient, type HttpClient } from "./http-client";
 import type {
@@ -20,15 +21,17 @@ export interface CaseReviewApi {
 export class HttpCaseReviewApi implements CaseReviewApi {
   constructor(private readonly http: HttpClient) {}
 
-  getCase(caseId: string): Promise<CaseRecord> {
-    return this.http.get<CaseRecord>(`/cases/${encodeURIComponent(caseId)}`);
+  async getCase(caseId: string): Promise<CaseRecord> {
+    const caseRecord = await this.http.get<CaseRecord>(`/cases/${encodeURIComponent(caseId)}`);
+    return normalizeCaseRecord(caseRecord);
   }
 
-  submitFollowUp(caseId: string, payload: FollowUpPayload): Promise<CaseRecord> {
-    return this.http.post<CaseRecord, CaseRecord>(
+  async submitFollowUp(caseId: string, payload: FollowUpPayload): Promise<CaseRecord> {
+    const caseRecord = await this.http.post<CaseRecord, CaseRecord>(
       `/cases/${encodeURIComponent(caseId)}/follow-ups`,
       normalizeFollowUpPayload(payload),
     );
+    return normalizeCaseRecord(caseRecord);
   }
 
   createQuery(payload: QueryCreateRequest): Promise<QueryRecord> {
@@ -60,4 +63,11 @@ export async function getCaseReviewData(caseId: string): Promise<CaseReviewData>
           : "The backend API was unavailable, so the local v2 follow-up fixture was used.",
     };
   }
+}
+
+function normalizeCaseRecord(caseRecord: CaseRecord): CaseRecord {
+  return {
+    ...caseRecord,
+    case_classification: normalizeCaseClassification(caseRecord.case_classification),
+  };
 }

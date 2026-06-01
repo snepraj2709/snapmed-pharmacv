@@ -1,8 +1,9 @@
 import { AlertTriangle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { CaseClassification } from "@/api/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { normalizeCaseClassification } from "@/domain/case-classification";
 
 import { applyFieldControls, flattenCaseFields, getCaseStats, groupFieldsBySection } from "./domain";
 import { CaseHeader } from "./components/CaseHeader";
@@ -23,6 +24,8 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
   const raiseQuery = useRaiseQuery(caseId);
   const controls = useReviewControls();
   const [classification, setClassification] = useState<CaseClassification>("null");
+  const [classificationEdited, setClassificationEdited] = useState(false);
+  const loadedCaseIdRef = useRef<string | null>(null);
 
   const caseRecord = caseReviewQuery.data?.case;
   const fields = useMemo(() => (caseRecord ? flattenCaseFields(caseRecord) : []), [caseRecord]);
@@ -35,9 +38,19 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
 
   useEffect(() => {
     if (caseRecord) {
-      setClassification(caseRecord.case_classification);
+      const normalizedClassification = normalizeCaseClassification(caseRecord.case_classification);
+      if (loadedCaseIdRef.current !== caseRecord.case_id) {
+        loadedCaseIdRef.current = caseRecord.case_id;
+        setClassificationEdited(false);
+        setClassification(normalizedClassification);
+        return;
+      }
+
+      if (!classificationEdited) {
+        setClassification(normalizedClassification);
+      }
     }
-  }, [caseRecord]);
+  }, [caseRecord, classificationEdited]);
 
   if (caseReviewQuery.isLoading) {
     return <CaseReviewSkeleton />;
@@ -53,7 +66,10 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
         caseRecord={caseRecord}
         classification={classification}
         stats={stats}
-        onClassificationChange={setClassification}
+        onClassificationChange={(value) => {
+          setClassificationEdited(true);
+          setClassification(value);
+        }}
       />
 
       <main className="container flex flex-col gap-6 py-6">

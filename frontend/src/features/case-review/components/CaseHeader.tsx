@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { CASE_CLASSIFICATION_OPTIONS } from "@/domain/case-classification";
 
 interface CaseHeaderProps {
   caseRecord: CaseRecord;
@@ -53,9 +54,11 @@ export function CaseHeader({
                 <SelectValue placeholder="Select classification" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="significant">Significant</SelectItem>
-                <SelectItem value="non-significant">Non-significant</SelectItem>
-                <SelectItem value="null">Null</SelectItem>
+                {CASE_CLASSIFICATION_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

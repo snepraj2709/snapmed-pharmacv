@@ -8,6 +8,7 @@ import type {
   FieldStatus,
   FollowUpPayload,
 } from "@/api/types";
+import { normalizeCaseClassification } from "@/domain/case-classification";
 
 const DEFAULT_FOLLOW_UP_CLASSIFICATION: CaseClassification = "null";
 
@@ -19,7 +20,9 @@ export function normalizeFollowUpPayload(payload: FollowUpPayload): CaseRecord {
   return {
     case_id: payload.case_id,
     version: payload.version ?? (payload.follow_up_number ?? 1) + 1,
-    case_classification: payload.case_classification ?? DEFAULT_FOLLOW_UP_CLASSIFICATION,
+    case_classification: payload.case_classification
+      ? normalizeCaseClassification(payload.case_classification)
+      : DEFAULT_FOLLOW_UP_CLASSIFICATION,
     extracted_at: payload.extracted_at,
     source_document: payload.source_document,
     sections: payload.sections,
@@ -38,7 +41,7 @@ function normalizeBaseCase(): CaseRecord {
 
   return {
     ...rawCase,
-    case_classification: rawCase.case_classification as CaseClassification,
+    case_classification: normalizeCaseClassification(rawCase.case_classification),
     missing_fields: rawCase.missing_fields ?? [],
   };
 }
