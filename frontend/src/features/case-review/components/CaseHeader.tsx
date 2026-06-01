@@ -49,7 +49,10 @@ export function CaseHeader({
             <Label htmlFor="case-classification" className="text-slate-200">
               Case Classification
             </Label>
-            <Select value={classification} onValueChange={(value) => onClassificationChange(value as CaseClassification)}>
+            <Select
+              value={classification === "null" ? "" : classification}
+              onValueChange={(value) => onClassificationChange(value as CaseClassification)}
+            >
               <SelectTrigger id="case-classification" className="border-white/20 bg-white text-brand-navy">
                 <SelectValue placeholder="Select classification" />
               </SelectTrigger>

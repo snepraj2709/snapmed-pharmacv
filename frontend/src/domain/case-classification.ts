@@ -3,7 +3,6 @@ import type { CaseClassification } from "@/api/types";
 export const CASE_CLASSIFICATION_OPTIONS = [
   { value: "significant", label: "Significant" },
   { value: "non-significant", label: "Non-significant" },
-  { value: "null", label: "Null" },
 ] as const satisfies Array<{ value: CaseClassification; label: string }>;
 
 export function normalizeCaseClassification(value: unknown): CaseClassification {
