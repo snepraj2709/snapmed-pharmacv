@@ -25,7 +25,9 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
   const controls = useReviewControls();
   const [classification, setClassification] = useState<CaseClassification>("null");
   const [classificationEdited, setClassificationEdited] = useState(false);
+  const [expandedSectionKeys, setExpandedSectionKeys] = useState<Set<string>>(() => new Set());
   const loadedCaseIdRef = useRef<string | null>(null);
+  const expandedSectionsCaseIdRef = useRef<string | null>(null);
 
   const caseRecord = caseReviewQuery.data?.case;
   const fields = useMemo(() => (caseRecord ? flattenCaseFields(caseRecord) : []), [caseRecord]);
@@ -51,6 +53,31 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
       }
     }
   }, [caseRecord, classificationEdited]);
+
+  useEffect(() => {
+    if (!caseRecord || groupedFields.length === 0) {
+      return;
+    }
+
+    if (expandedSectionsCaseIdRef.current === caseRecord.case_id) {
+      return;
+    }
+
+    expandedSectionsCaseIdRef.current = caseRecord.case_id;
+    setExpandedSectionKeys(new Set([groupedFields[0][0]]));
+  }, [caseRecord, groupedFields]);
+
+  function toggleSection(sectionKey: string) {
+    setExpandedSectionKeys((current) => {
+      const next = new Set(current);
+      if (next.has(sectionKey)) {
+        next.delete(sectionKey);
+      } else {
+        next.add(sectionKey);
+      }
+      return next;
+    });
+  }
 
   if (caseReviewQuery.isLoading) {
     return <CaseReviewSkeleton />;
@@ -106,6 +133,8 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
                 sectionKey={sectionKey}
                 sectionLabel={sectionFields[0]?.sectionLabel ?? sectionKey}
                 fields={sectionFields}
+                isExpanded={expandedSectionKeys.has(sectionKey)}
+                onToggle={() => toggleSection(sectionKey)}
                 onRaiseQuery={controls.openQuery}
               />
             ))}
