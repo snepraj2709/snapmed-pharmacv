@@ -12,3 +12,10 @@ build/
 *.egg-info/
 backups/*.json
 !backups/.gitkeep
+
+.playwright-mcp/
+
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/**/*.tsbuildinfo
