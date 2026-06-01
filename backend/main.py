@@ -17,15 +17,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-LOCAL_CORS_ORIGIN_REGEX = (
-    r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:\d+)?$"
-)
-
 app = FastAPI(title="SnapMed PharmaCV API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=LOCAL_CORS_ORIGIN_REGEX,
+    allow_origins=["*"],
     allow_methods=["GET", "POST", "PUT", "OPTIONS"],
     allow_headers=["*"],
 )
