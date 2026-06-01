@@ -1,6 +1,6 @@
 # SnapMed PharmaCV
 
-Python FastAPI service for pharmacovigilance case review. It loads the initial case from `case_v1.json`, accepts follow-up payloads, annotates field-level merge changes, and stores reviewer queries in memory.
+Python FastAPI service and TypeScript React frontend for pharmacovigilance case review. The backend loads the initial case from `case_v1.json`, accepts follow-up payloads, annotates field-level merge changes, and stores reviewer queries in memory. The frontend consumes the API through a typed service layer and presents a compact reviewer workflow for case diffs.
 
 ## Local Development
 
@@ -8,6 +8,7 @@ Requirements:
 
 - Python 3.12
 - uv
+- Node.js 20+ and npm, for the frontend
 
 Install dependencies:
 
@@ -26,6 +27,58 @@ Run tests:
 ```bash
 uv run pytest
 ```
+
+## Frontend
+
+The `frontend/` folder contains a Vite, React, TypeScript, Tailwind CSS, and shadcn/ui application. It defaults to `http://localhost:8000` for API calls and can be pointed at another backend with `VITE_API_BASE_URL`.
+
+Install frontend dependencies:
+
+```bash
+cd frontend
+npm install
+```
+
+Run the frontend:
+
+```bash
+npm run dev
+```
+
+The Vite app listens on `http://localhost:5173`.
+
+Build and type-check the frontend:
+
+```bash
+npm run build
+```
+
+Optional API override:
+
+```bash
+VITE_API_BASE_URL=http://localhost:8000 npm run dev
+```
+
+### Frontend Architecture
+
+- API boundary: `frontend/src/api/` exposes a `CaseReviewApi` interface, an HTTP implementation, typed request/response models, and a fetch client.
+- Environment config: `frontend/src/config/env.ts` normalizes `VITE_API_BASE_URL`.
+- Domain formatting: `frontend/src/features/case-review/domain.ts` flattens sections, groups fields, formats values, labels statuses, and applies sort/filter controls.
+- State management: React Query handles API reads/mutations; local review controls are isolated in `useReviewControls`.
+- Fallback data: if the API is unavailable, the page renders a merged local review using `case_v2_followup_payload.json` so the UI can still be reviewed.
+
+### Case Review UI
+
+The case review page uses the brand colors from `Build_Plan.md`: navy `#0C1A36`, brand blue `#0077B6`, and accent teal `#00C2E0`.
+
+- The header shows case metadata, classification selection, and summary counts.
+- Fields are grouped by section in a single information panel instead of separate row cards.
+- Each field row uses a `20 / 50 / 30` desktop distribution: field name, value/change details, then status/confidence/actions.
+- Overridden rows receive a subtle `#0077B6` background tint and show current versus previous values inline.
+- Source references are shown at the bottom-right of each row with an icon.
+- Section rows use subtle dividers, avoiding heavy borders between individual fields.
+- The conflicts-only filter narrows the review to overridden fields and expands relevant sections.
+- The case classification selector only exposes `Significant` and `Non-significant`; null values display as an empty placeholder until selected.
 
 ## Merge Behavior
 
