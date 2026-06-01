@@ -13,12 +13,7 @@ export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
   return (
     <Badge
       variant="outline"
-      className={cn(
-        "bg-white",
-        level === "low" && "border-red-200 text-confidence-low",
-        level === "medium" && "border-amber-200 text-confidence-medium",
-        level === "high" && "border-emerald-200 text-confidence-high",
-      )}
+      className={cn("border-slate-200 bg-white text-brand-navy", level === "low" && "border-brand-blue/30")}
     >
       {formatConfidence(confidence)} {level}
     </Badge>

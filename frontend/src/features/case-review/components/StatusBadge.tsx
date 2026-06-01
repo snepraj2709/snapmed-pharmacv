@@ -13,10 +13,10 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     <Badge
       variant="outline"
       className={cn(
-        "bg-white",
-        status === "new" && "border-brand-teal/40 text-brand-blue",
-        status === "overridden" && "border-amber-200 text-amber-700",
-        status === "unchanged" && "border-slate-200 text-slate-600",
+        "border-transparent",
+        status === "new" && "bg-brand-teal/10 text-brand-navy",
+        status === "overridden" && "bg-brand-blue/10 text-brand-blue",
+        status === "unchanged" && "bg-slate-100 text-slate-600",
       )}
     >
       {getStatusLabel(status)}

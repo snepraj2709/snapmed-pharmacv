@@ -27,11 +27,19 @@ export function MissingFieldsBanner({ missingFields }: MissingFieldsBannerProps)
         <div className="flex flex-wrap gap-2">
           {missingFields.map((field) => (
             <Badge key={field} variant="outline" className="bg-white">
-              {field}
+              {formatMissingFieldLabel(field)}
             </Badge>
           ))}
         </div>
       </div>
     </Alert>
   );
+}
+
+function formatMissingFieldLabel(field: string): string {
+  return field
+    .split(/[._\s]+/)
+    .filter(Boolean)
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
 }

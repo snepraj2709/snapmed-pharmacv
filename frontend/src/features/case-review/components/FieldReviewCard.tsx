@@ -1,9 +1,8 @@
-import { MessageSquarePlus } from "lucide-react";
+import { ArrowRight, FileSearch, MessageSquarePlus } from "lucide-react";
 import type { KeyboardEvent } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 import { formatFieldValue, type FieldReviewItem } from "../domain";
 import { ConfidenceBadge } from "./ConfidenceBadge";
@@ -16,69 +15,110 @@ interface FieldReviewCardProps {
 
 export function FieldReviewCard({ item, onRaiseQuery }: FieldReviewCardProps) {
   const isConflict = item.field.status === "overridden";
+  const currentValue = formatFieldValue(item.field.value);
+  const previousValue = formatFieldValue(item.field.previous_value);
 
   return (
-    <Card
+    <article
       tabIndex={0}
       data-field-card="true"
       onKeyDown={handleFieldCardKeyDown}
-      className="outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        "grid min-w-0 gap-3 px-3 py-2.5 outline-none transition-colors focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[20fr_50fr_30fr] md:items-stretch",
+        isConflict && "bg-[#0077B6]/[0.04]",
+      )}
     >
-      <CardHeader className="gap-3 pb-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <CardTitle className="truncate text-base">{item.label}</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">{item.fieldPath}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <StatusBadge status={item.field.status} />
-            <ConfidenceBadge confidence={item.field.confidence} />
-          </div>
-        </div>
-      </CardHeader>
+      <div className="min-w-0">
+        <h3 className="break-words text-sm font-semibold leading-5 text-foreground">{item.label}</h3>
+      </div>
 
-      <CardContent className="space-y-4">
+      <div className="min-w-0">
         {isConflict ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ValuePanel label="New value" value={formatFieldValue(item.field.value)} primary />
-            <ValuePanel label="Previous value" value={formatFieldValue(item.field.previous_value)} />
-          </div>
+          <ConflictComparison currentValue={currentValue} previousValue={previousValue} />
         ) : (
-          <ValuePanel label="Value" value={formatFieldValue(item.field.value)} primary />
+          <InlineValue value={currentValue} />
         )}
+      </div>
 
-        <Separator />
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm">
-            <span className="text-muted-foreground">Source </span>
-            <span className="font-medium text-foreground">{item.field.source}</span>
-          </div>
+      <div className="flex min-w-0 flex-col gap-2 self-stretch md:items-end md:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 md:justify-end">
+          <StatusBadge status={item.field.status} />
+          <ConfidenceBadge confidence={item.field.confidence} />
           {isConflict ? (
-            <Button size="sm" variant="outline" onClick={() => onRaiseQuery(item)}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 border-brand-blue/25 bg-white px-2.5 text-brand-blue hover:bg-accent hover:text-brand-navy"
+              aria-label={`Raise query for ${item.label}`}
+              onClick={() => onRaiseQuery(item)}
+            >
               <MessageSquarePlus className="h-4 w-4" />
-              Raise Query
+              Query
             </Button>
           ) : null}
         </div>
-      </CardContent>
-    </Card>
+        <SourceReference source={item.field.source} />
+      </div>
+    </article>
   );
 }
 
-function ValuePanel({
-  label,
-  value,
-  primary,
+function SourceReference({ source }: { source: string }) {
+  return (
+    <div className="inline-flex max-w-full items-center gap-1 self-end text-xs text-muted-foreground">
+      <FileSearch className="h-3.5 w-3.5 shrink-0 text-brand-blue" />
+      <span className="truncate">{source}</span>
+    </div>
+  );
+}
+
+function ConflictComparison({
+  currentValue,
+  previousValue,
 }: {
-  label: string;
-  value: string;
-  primary?: boolean;
+  currentValue: string;
+  previousValue: string;
 }) {
   return (
-    <div className={primary ? "rounded-md border border-brand-blue/30 bg-accent p-3" : "rounded-md border bg-muted/40 p-3"}>
-      <p className="text-xs font-medium uppercase tracking-normal text-muted-foreground">{label}</p>
-      <p className="mt-2 break-words text-sm font-semibold text-foreground">{value}</p>
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_1rem_minmax(0,1fr)] items-center gap-1.5">
+      <InlineValue label="Current" value={currentValue} tone="current" />
+      <div className="flex justify-center text-brand-blue" aria-hidden="true">
+        <ArrowRight className="h-3.5 w-3.5" />
+      </div>
+      <InlineValue label="Previous" value={previousValue} tone="previous" />
+    </div>
+  );
+}
+
+function InlineValue({
+  label,
+  value,
+  tone = "default",
+}: {
+  label?: string;
+  value: string;
+  tone?: "current" | "previous" | "default";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-baseline gap-2 py-1",
+        tone === "previous" && "text-muted-foreground",
+      )}
+    >
+      {label ? (
+        <span className="shrink-0 text-xs font-medium uppercase tracking-normal text-muted-foreground">
+          {label}
+        </span>
+      ) : null}
+      <span
+        className={cn(
+          "min-w-0 break-words text-sm font-medium leading-5 text-foreground",
+          tone === "previous" && "text-muted-foreground",
+        )}
+      >
+        {value}
+      </span>
     </div>
   );
 }

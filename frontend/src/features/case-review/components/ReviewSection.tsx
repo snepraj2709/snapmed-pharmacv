@@ -27,10 +27,11 @@ export function ReviewSection({
 }: ReviewSectionProps) {
   const headingId = `${sectionKey}-section`;
   const contentId = `${sectionKey}-section-content`;
+  const conflictCount = fields.filter((field) => field.field.status === "overridden").length;
 
   return (
-    <section aria-labelledby={headingId} className="rounded-lg border bg-white shadow-field">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
+    <section aria-labelledby={headingId} className="overflow-hidden rounded-lg border bg-white shadow-field">
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5">
         <h2 id={headingId} className="min-w-0">
           {isCollapsible ? (
             <Button
@@ -55,10 +56,17 @@ export function ReviewSection({
             </span>
           )}
         </h2>
-        <span className="text-sm text-muted-foreground">{fields.length} fields</span>
+        <div className="flex shrink-0 items-center gap-2 text-sm text-muted-foreground">
+          <span>{fields.length} fields</span>
+          {conflictCount > 0 ? (
+            <span className="rounded-md bg-brand-blue/10 px-2 py-1 text-xs font-medium text-brand-blue">
+              {conflictCount} conflicts
+            </span>
+          ) : null}
+        </div>
       </div>
       {isExpanded ? (
-        <div id={contentId} className="grid gap-3 border-t p-4 lg:grid-cols-2">
+        <div id={contentId} className="flex flex-col divide-y divide-slate-200/80 border-t bg-white p-2">
           {fields.map((field) => (
             <FieldReviewCard key={field.fieldPath} item={field} onRaiseQuery={onRaiseQuery} />
           ))}
