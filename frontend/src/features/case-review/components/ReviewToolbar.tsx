@@ -8,6 +8,7 @@ import type { SortMode } from "../domain";
 
 interface ReviewToolbarProps {
   conflictsOnly: boolean;
+  conflictCount: number;
   sortMode: SortMode;
   visibleCount: number;
   totalCount: number;
@@ -17,12 +18,15 @@ interface ReviewToolbarProps {
 
 export function ReviewToolbar({
   conflictsOnly,
+  conflictCount,
   sortMode,
   visibleCount,
   totalCount,
   onConflictsOnlyChange,
   onSortModeChange,
 }: ReviewToolbarProps) {
+  const canFilterConflicts = conflictCount > 0;
+
   return (
     <section className="flex flex-col gap-4 border-y bg-white/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
@@ -38,10 +42,14 @@ export function ReviewToolbar({
           <Checkbox
             id="conflicts-only"
             checked={conflictsOnly}
+            disabled={!canFilterConflicts}
             onCheckedChange={(checked) => onConflictsOnlyChange(checked === true)}
           />
-          <Label htmlFor="conflicts-only" className="text-sm">
-            Conflicts only
+          <Label
+            htmlFor="conflicts-only"
+            className={canFilterConflicts ? "text-sm" : "text-sm text-muted-foreground"}
+          >
+            Conflicts only ({conflictCount})
           </Label>
         </div>
 

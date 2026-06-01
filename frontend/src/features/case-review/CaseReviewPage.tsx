@@ -31,12 +31,14 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
 
   const caseRecord = caseReviewQuery.data?.case;
   const fields = useMemo(() => (caseRecord ? flattenCaseFields(caseRecord) : []), [caseRecord]);
+  const stats = useMemo(() => getCaseStats(fields), [fields]);
+  const canFilterConflicts = stats.conflicts > 0;
+  const conflictsOnly = controls.state.conflictsOnly && canFilterConflicts;
   const visibleFields = useMemo(
-    () => applyFieldControls(fields, controls.state),
-    [controls.state, fields],
+    () => applyFieldControls(fields, { ...controls.state, conflictsOnly }),
+    [conflictsOnly, controls.state, fields],
   );
   const groupedFields = useMemo(() => groupFieldsBySection(visibleFields), [visibleFields]);
-  const stats = useMemo(() => getCaseStats(fields), [fields]);
 
   useEffect(() => {
     if (caseRecord) {
@@ -53,6 +55,12 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
       }
     }
   }, [caseRecord, classificationEdited]);
+
+  useEffect(() => {
+    if (controls.state.conflictsOnly && !canFilterConflicts) {
+      controls.setConflictsOnly(false);
+    }
+  }, [canFilterConflicts, controls]);
 
   useEffect(() => {
     if (!caseRecord || groupedFields.length === 0) {
@@ -115,11 +123,14 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
         <MissingFieldsBanner missingFields={caseRecord.missing_fields} />
 
         <ReviewToolbar
-          conflictsOnly={controls.state.conflictsOnly}
+          conflictsOnly={conflictsOnly}
+          conflictCount={stats.conflicts}
           sortMode={controls.state.sortMode}
           visibleCount={visibleFields.length}
           totalCount={fields.length}
-          onConflictsOnlyChange={controls.setConflictsOnly}
+          onConflictsOnlyChange={(checked) => {
+            controls.setConflictsOnly(canFilterConflicts ? checked : false);
+          }}
           onSortModeChange={controls.setSortMode}
         />
 
@@ -133,7 +144,8 @@ export function CaseReviewPage({ caseId }: CaseReviewPageProps) {
                 sectionKey={sectionKey}
                 sectionLabel={sectionFields[0]?.sectionLabel ?? sectionKey}
                 fields={sectionFields}
-                isExpanded={expandedSectionKeys.has(sectionKey)}
+                isCollapsible={!conflictsOnly}
+                isExpanded={conflictsOnly || expandedSectionKeys.has(sectionKey)}
                 onToggle={() => toggleSection(sectionKey)}
                 onRaiseQuery={controls.openQuery}
               />
