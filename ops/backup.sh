@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 SERVICE_URL="${SERVICE_URL:-http://127.0.0.1:8000}"
 BACKUP_DIR="${BACKUP_DIR:-$ROOT_DIR/backups}"
+CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-10}"
+CURL_MAX_TIME="${CURL_MAX_TIME:-60}"
 
 usage() {
   cat <<'USAGE'
@@ -13,6 +15,8 @@ Usage: ops/backup.sh
 Environment:
   SERVICE_URL   Base service URL (default: http://127.0.0.1:8000)
   BACKUP_DIR    Backup output directory (default: backups)
+  CURL_CONNECT_TIMEOUT  curl connect timeout seconds (default: 10)
+  CURL_MAX_TIME         curl max request seconds (default: 60)
 USAGE
 }
 
@@ -48,7 +52,10 @@ tmp_file="$(mktemp "$BACKUP_DIR/.cases.XXXXXX")"
 trap 'rm -f "$tmp_file"' EXIT
 
 log "fetching cases from $SERVICE_URL"
-curl -fsS "$SERVICE_URL/cases" |
+curl -fsS \
+  --connect-timeout "$CURL_CONNECT_TIMEOUT" \
+  --max-time "$CURL_MAX_TIME" \
+  "$SERVICE_URL/cases" |
   jq -e \
     --arg created_at "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
     --arg service_url "$SERVICE_URL" \

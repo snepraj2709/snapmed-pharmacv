@@ -2,6 +2,8 @@
 set -Eeuo pipefail
 
 SERVICE_URL="${SERVICE_URL:-http://127.0.0.1:8000}"
+CURL_CONNECT_TIMEOUT="${CURL_CONNECT_TIMEOUT:-10}"
+CURL_MAX_TIME="${CURL_MAX_TIME:-60}"
 DRY_RUN=0
 BACKUP_FILE=""
 
@@ -11,6 +13,8 @@ Usage: ops/restore.sh [--dry-run] <backup-file>
 
 Environment:
   SERVICE_URL   Base service URL (default: http://127.0.0.1:8000)
+  CURL_CONNECT_TIMEOUT  curl connect timeout seconds (default: 10)
+  CURL_MAX_TIME         curl max request seconds (default: 60)
 USAGE
 }
 
@@ -79,7 +83,10 @@ while IFS= read -r case_json; do
 
   log "restoring $case_id"
   printf '%s\n' "$case_json" |
-    curl -fsS -X POST "$SERVICE_URL/cases" \
+    curl -fsS \
+      --connect-timeout "$CURL_CONNECT_TIMEOUT" \
+      --max-time "$CURL_MAX_TIME" \
+      -X POST "$SERVICE_URL/cases" \
       -H 'Content-Type: application/json' \
       --data-binary @- >/dev/null ||
     die "failed to restore $case_id"
